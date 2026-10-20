@@ -15,7 +15,7 @@ DB_CHANNEL_ID = int(os.environ.get("DB_CHANNEL_ID", ""))
 ADMINS = [int(x) for x in os.environ.get("ADMINS", "7284759394").split()]
 
 # Image URLs matching your design layouts
-FORCE_SUB_IMAGE = os.environ.get("FORCE_SUB_IMAGE", "https://files.catbox.moe/jg30k8.jpg https://graph.org/file/1136cecc518a65467b907-bfa6233c2b0e4d629f.jpg")  # Images 1 & 2[span_3](start_span)[span_3](end_span)[span_4](start_span)[span_4](end_span)
+FORCE_SUB_IMAGE = os.environ.get("FORCE_SUB_IMAGE", "https://files.catbox.moe/jg30k8.jpg")  # Images 1 & 2[span_3](start_span)[span_3](end_span)[span_4](start_span)[span_4](end_span)
 ABOUT_IMAGE = os.environ.get("ABOUT_IMAGE", "https://files.catbox.moe/5ho5yp.jpg")          # Image 3[span_5](start_span)[span_5](end_span)
 
 # File Auto Delete Time in Seconds (5 minutes = 300 seconds)
