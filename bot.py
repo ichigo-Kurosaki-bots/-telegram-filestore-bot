@@ -15,6 +15,18 @@ from config import (
 )
 import database as db
 
+# ---- ROBUST ADMINS PARSER (Ensures Owner/Admin checks work perfectly) ----
+if isinstance(ADMINS, str):
+    ADMINS = [int(x.strip()) for x in ADMINS.split(",") if x.strip().isdigit()]
+elif isinstance(ADMINS, int):
+    ADMINS = [ADMINS]
+elif not isinstance(ADMINS, (list, set, tuple)):
+    ADMINS = []
+else:
+    ADMINS = [int(x) for x in ADMINS if str(x).isdigit()]
+
+print(f"Initialized Admin IDs list: {ADMINS}")
+
 print("Initializing Pyrogram Client...")
 bot = Client("FileStoreBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
@@ -189,13 +201,11 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
             pass
         return
 
-    # Delete force sub prompt image message upon successful join check
     try:
         await callback.message.delete()
     except Exception:
         pass
 
-    # Show checking subscription image message for 2 seconds
     checking_msg = await callback.message.reply_photo(
         photo=FORCE_SUB_IMAGE.strip(),
         caption="**Checking subscription...**"
@@ -207,7 +217,6 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
     except Exception:
         pass
 
-    # Deliver content if file link requested, or show about menu
     if param:
         await send_stored_files(client, callback.message.chat.id, param)
     else:
@@ -378,6 +387,7 @@ async def start_web_server():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
+
 # ---------------- MAIN ENTRYPOINT ----------------
 
 async def main():
@@ -396,12 +406,11 @@ async def main():
     print("Starting Telegram Bot...")
     await bot.start()
     
-    # Print the exact bot username connected to this token
     me = await bot.get_me()
     print(f"SUCCESS! Bot is online as: @{me.username} (ID: {me.id})")
+    print(f"Authorized Admin IDs: {ADMINS}")
     
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
     asyncio.run(main())
-
