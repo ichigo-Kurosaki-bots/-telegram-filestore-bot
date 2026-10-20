@@ -12,7 +12,7 @@ DATABASE_NAME = os.environ.get("DATABASE_NAME", "FileStoreBot")
 DB_CHANNEL_ID = int(os.environ.get("DB_CHANNEL_ID", ""))
 
 # Owner/Admin Telegram Numeric IDs (comma-separated if multiple)
-ADMINS = [int(x) for x in os.environ.get("ADMINS", "7284759394").split()]
+ADMINS = [int(x) for x in os.environ.get("ADMINS", "").split()]
 
 # Image URLs matching your design layouts
 FORCE_SUB_IMAGE = os.environ.get("FORCE_SUB_IMAGE", "https://files.catbox.moe/jg30k8.jpg")  # Images 1 & 2[span_3](start_span)[span_3](end_span)[span_4](start_span)[span_4](end_span)
