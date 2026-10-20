@@ -31,19 +31,20 @@ async def check_fsub(client: Client, user_id: int):
     unjoined = []
     joined_status = []
 
-    for ch in channels:
+    for idx, ch in enumerate(channels, 1):
         try:
             member = await client.get_chat_member(ch["channel_id"], user_id)
             if member.status in [ChatMemberStatus.LEFT, ChatMemberStatus.BANNED]:
                 unjoined.append(ch)
-                joined_status.append(f"1. {ch['channel_title']} - **NOT JOINED** ❌")
+                joined_status.append(f"{idx}. {ch['channel_title']} - **NOT JOINED** ❌")
             else:
-                joined_status.append(f"1. {ch['channel_title']} - **JOINED** ✅")
+                joined_status.append(f"{idx}. {ch['channel_title']} - **JOINED** ✅")
         except UserNotParticipant:
             unjoined.append(ch)
-            joined_status.append(f"1. {ch['channel_title']} - **NOT JOINED** ❌")
+            joined_status.append(f"{idx}. {ch['channel_title']} - **NOT JOINED** ❌")
         except Exception:
-            continue
+            # If bot lacks admin rights in channel, handle gracefully
+            joined_status.append(f"{idx}. {ch['channel_title']} - **CHECK FAILED** ⚠️")
 
     return unjoined, joined_status
 
@@ -57,7 +58,7 @@ async def start_handler(client: Client, message: Message):
     args = message.text.split(maxsplit=1)
     param = args[1] if len(args) > 1 else None
 
-    # Check Force Subscription status[span_6](start_span)[span_6](end_span)
+    # Check Force Subscription status
     unjoined, status_list = await check_fsub(client, user_id)
 
     if unjoined:
@@ -70,7 +71,7 @@ async def start_handler(client: Client, message: Message):
 
         text = (
             "**HELLO THERE..! ⚡**\n\n"
-            "🗨️ **PLEASE JOIN BOTH OF OUR CHANNELS FIRST THEN CLICK ON TRY AGAIN...❗️**\n\n"
+            "🗨️ **PLEASE JOIN ALL OF OUR CHANNELS FIRST THEN CLICK ON TRY AGAIN...❗️**\n\n"
             "**Channel Subscription Status:**\n\n" + "\n".join(status_list)
         )
 
@@ -81,14 +82,14 @@ async def start_handler(client: Client, message: Message):
         )
         return
 
-    # If already joined and no parameters provided, show About Us screen (Image 3)[span_7](start_span)[span_7](end_span)
+    # If already joined and no parameters provided, show About Us screen
     if not param:
         text = (
             "**ABOUT US...**\n\n"
-            "▶ **MADE FOR :** @Aero_Unity\n"
-            "▶ **OWNER :** @Mr_Mohammed_29\n"
-            "▶ **POWERED BY :** @Aero_Unity\n"
-            "▶ **SUPPORT GROUP:** @Coders_Grp\n\n"
+            "▶ **MADE FOR :** @Animes_Unity\n"
+            "▶ **OWNER :** ANONYMOUS\n"
+            "▶ **POWERED BY :** @The_Vanquishers\n"
+            "▶ **ADULT CHANNEL :** @AdultxUnity\n\n"
             "**ADIOS !!** 🥳"
         )
         buttons = [
@@ -175,7 +176,7 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
 
         text = (
             "**HELLO THERE..! ⚡**\n\n"
-            "🗨️ **PLEASE JOIN BOTH OF OUR CHANNELS FIRST THEN CLICK ON TRY AGAIN...❗️**\n\n"
+            "🗨️ **PLEASE JOIN ALL OF OUR CHANNELS FIRST THEN CLICK ON TRY AGAIN...❗️**\n\n"
             "**Channel Subscription Status:**\n\n" + "\n".join(status_list)
         )
         
@@ -189,27 +190,33 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
         return
 
     # Delete force sub prompt image message upon successful join check
-    await callback.message.delete()
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
 
-    # Show checking subscription image message for 2 seconds (Image 2)[span_8](start_span)[span_8](end_span)
+    # Show checking subscription image message for 2 seconds
     checking_msg = await callback.message.reply_photo(
         photo=FORCE_SUB_IMAGE,
         caption="**Checking subscription...**"
     )
 
     await asyncio.sleep(2)
-    await checking_msg.delete()
+    try:
+        await checking_msg.delete()
+    except Exception:
+        pass
 
-    # Deliver content if file link requested, or show about menu (Image 3)[span_9](start_span)[span_9](end_span)
+    # Deliver content if file link requested, or show about menu
     if param:
         await send_stored_files(client, callback.message.chat.id, param)
     else:
         text = (
             "**ABOUT US...**\n\n"
-            "▶ **MADE FOR :** @Aero_Unity\n"
-            "▶ **OWNER :** @Mr_Mohammed_29\n"
-            "▶ **POWERED BY :** @Aero_Unity\n"
-            "▶ **SUPPORT GROUP :** @Coders_Grp\n\n"
+            "▶ **MADE FOR :** @Animes_Unity\n"
+            "▶ **OWNER :** ANONYMOUS\n"
+            "▶ **POWERED BY :** @The_Vanquishers\n"
+            "▶ **ADULT CHANNEL :** @AdultxUnity\n\n"
             "**ADIOS !!** 🥳"
         )
         buttons = [
