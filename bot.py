@@ -378,7 +378,6 @@ async def start_web_server():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
-
 # ---------------- MAIN ENTRYPOINT ----------------
 
 async def main():
@@ -396,8 +395,13 @@ async def main():
 
     print("Starting Telegram Bot...")
     await bot.start()
-    print("Bot is up and running successfully!")
+    
+    # Print the exact bot username connected to this token
+    me = await bot.get_me()
+    print(f"SUCCESS! Bot is online as: @{me.username} (ID: {me.id})")
+    
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
     asyncio.run(main())
+
