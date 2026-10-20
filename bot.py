@@ -15,6 +15,7 @@ from config import (
 )
 import database as db
 
+print("Initializing Pyrogram Client...")
 bot = Client("FileStoreBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 # ---------------- HELPER FUNCTIONS ----------------
@@ -43,7 +44,6 @@ async def check_fsub(client: Client, user_id: int):
             unjoined.append(ch)
             joined_status.append(f"{idx}. {ch['channel_title']} - **NOT JOINED** ❌")
         except Exception:
-            # If bot lacks admin rights in channel, handle gracefully
             joined_status.append(f"{idx}. {ch['channel_title']} - **CHECK FAILED** ⚠️")
 
     return unjoined, joined_status
@@ -76,7 +76,7 @@ async def start_handler(client: Client, message: Message):
         )
 
         await message.reply_photo(
-            photo=FORCE_SUB_IMAGE,
+            photo=FORCE_SUB_IMAGE.strip(),
             caption=text,
             reply_markup=InlineKeyboardMarkup(buttons)
         )
@@ -97,7 +97,7 @@ async def start_handler(client: Client, message: Message):
              InlineKeyboardButton("Close", callback_data="close")]
         ]
         await message.reply_photo(
-            photo=ABOUT_IMAGE,
+            photo=ABOUT_IMAGE.strip(),
             caption=text,
             reply_markup=InlineKeyboardMarkup(buttons)
         )
@@ -197,7 +197,7 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
 
     # Show checking subscription image message for 2 seconds
     checking_msg = await callback.message.reply_photo(
-        photo=FORCE_SUB_IMAGE,
+        photo=FORCE_SUB_IMAGE.strip(),
         caption="**Checking subscription...**"
     )
 
@@ -224,7 +224,7 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
              InlineKeyboardButton("Close", callback_data="close")]
         ]
         await callback.message.reply_photo(
-            photo=ABOUT_IMAGE,
+            photo=ABOUT_IMAGE.strip(),
             caption=text,
             reply_markup=InlineKeyboardMarkup(buttons)
         )
@@ -382,7 +382,19 @@ async def start_web_server():
 # ---------------- MAIN ENTRYPOINT ----------------
 
 async def main():
+    print("Starting 24/7 Keep-Alive Web Server...")
     await start_web_server()
+    print("Web Server started successfully.")
+
+    print("Testing MongoDB connection...")
+    try:
+        await db.get_fsub_channels()
+        print("MongoDB connection verified successfully!")
+    except Exception as e:
+        print(f"CRITICAL: MongoDB connection failed: {e}")
+        return
+
+    print("Starting Telegram Bot...")
     await bot.start()
     print("Bot is up and running successfully!")
     await asyncio.Event().wait()
