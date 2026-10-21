@@ -132,10 +132,13 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
     sent_messages = []
     for msg_id in msg_ids:
         try:
+            # Copy the message from database channel and attach a button below the file
+            file_button = InlineKeyboardMarkup([[InlineKeyboardButton("• Uᴘᴅᴀᴛᴇs •", url="https://t.me/Aero_Unity")]])
             msg = await client.copy_message(
                 chat_id=chat_id,
                 from_chat_id=DB_CHANNEL_ID,
-                message_id=msg_id
+                message_id=msg_id,
+                reply_markup=file_button
             )
             sent_messages.append(msg)
             await asyncio.sleep(0.5)
@@ -143,10 +146,13 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
             print(f"Error copying message {msg_id}: {e}")
 
     if sent_messages:
+        # Send the warning message as a direct reply to the last sent file
+        last_msg = sent_messages[-1]
         warn_msg = await client.send_message(
             chat_id=chat_id,
-            text=f" **Tʜɪs Fɪʟᴇ ɪs ᴅᴇʟᴇᴛɪɴɢ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ɪɴ {AUTO_DELETE_TIME // 60} ᴍɪɴᴜᴛᴇs **\n\n"
-                 f" **Fᴏʀᴡᴀʀᴅ ɪɴ ʏᴏᴜʀ Sᴀᴠᴇᴅ Mᴇssᴀɢᴇs..!.!**"
+            text=f"⚠️ **Tʜɪs Fɪʟᴇ ɪs ᴅᴇʟᴇᴛɪɴɢ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ɪɴ {AUTO_DELETE_TIME // 60} ᴍɪɴᴜᴛᴇs !**\n\n"
+                 f"📌 **Fᴏʀᴡᴀʀᴅ ɪᴛ ᴛᴏ ʏᴏᴜʀ Sᴀᴠᴇᴅ Mᴇssᴀɢᴇs..!**",
+            reply_to_message_id=last_msg.id
         )
         
         asyncio.create_task(delete_files_after_delay(client, chat_id, sent_messages, warn_msg, AUTO_DELETE_TIME))
@@ -186,7 +192,7 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
         buttons.append([InlineKeyboardButton("• Tʀʏ Aɢᴀɪɴ •", callback_data=try_again_data)])
 
         text = (
-            "**Hɪɪ.! ⚡**\n\n"
+            "**Hɪɪ..! ⚡**\n\n"
             " **Pʟᴇᴀsᴇ Jᴏɪɴ Aʟʟ Oғ Oᴜʀ Cʜᴀɴɴᴇʟs Fɪʀsᴛ Tʜᴇɴ Cʟɪᴄᴋ Oɴ Tʀʏ Aɢᴀɪɴ...❗️**\n\n"
             "**Cʜᴀɴɴᴇʟ Sᴜʙsᴄʀɪᴘᴛɪᴏɴ Sᴛᴀᴛᴜs:**\n\n" + "\n".join(status_list)
         )
