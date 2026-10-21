@@ -146,10 +146,23 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
                 message_id=msg_id,
                 reply_markup=file_button
             )
+            
+            if msg.caption:
+                try:
+                    await client.edit_message_caption(
+                        chat_id=chat_id,
+                        message_id=msg.id,
+                        caption=f"**{msg.caption}**",
+                        reply_markup=file_button
+                    )
+                except Exception:
+                    pass
+
             sent_messages.append(msg)
             await asyncio.sleep(0.5)
         except Exception as e:
             print(f"Error copying message {msg_id}: {e}")
+
 
     if sent_messages:
         last_msg = sent_messages[-1]
