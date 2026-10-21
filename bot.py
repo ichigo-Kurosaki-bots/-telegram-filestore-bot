@@ -247,15 +247,15 @@ async def close_callback(client: Client, callback: CallbackQuery):
 async def about_menu_callback(client: Client, callback: CallbackQuery):
     text = (
         "**Aʙᴏᴜᴛ Mᴇ...**\n\n"
-        "›› **MADE FOR :** @Aero_Unity\n"
-        "›› **OWNER :** @Mr_Mohammed_29\n"
-        "›› **POWERED BY :** @Aero_Unity\n"
-        "›› **SUPPORT GROUP :** @Coders_Grp\n\n"
-        "**ADIOS !!** 🥳"
+        "›› **Mᴀᴅᴇ Fᴏʀ :** @Ongoing_Donghua_Aero\n"
+        "›› **Oᴡɴᴇʀ : @Mr_Mohammed_29**\n"
+        "›› **Pᴏᴡᴇʀᴇᴅ Bʏ : @Aero_Unity**\n"
+        "›› **Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ : @Coders_Grp**\n\n"
+        "**Aᴅɪᴏs !!** 🥳"
     )
     buttons = [
-        [InlineKeyboardButton("Back", callback_data="about_back"),
-         InlineKeyboardButton("Close", callback_data="close")]
+        [InlineKeyboardButton("• Aʙᴏᴜᴛ Mᴇ •", callback_data="about_back"),
+         InlineKeyboardButton("• Cʟᴏsᴇ •", callback_data="close")]
     ]
     try:
         await callback.message.edit_caption(
@@ -270,14 +270,13 @@ async def about_menu_callback(client: Client, callback: CallbackQuery):
 async def about_back_callback(client: Client, callback: CallbackQuery):
     user_name = callback.from_user.first_name
     text = (
-        f"**Hi There... {user_name}!** 💥\n\n"
-        "**I AM A PREMIUM FILE STORE BOT.**\n"
-        "**I CAN GENERATE LINKS DIRECTLY WITH NO PROBLEMS**\n"
-        "**Powered By:** @Aero_Unity"
+        f"**Wᴇʟᴄᴏᴍᴇ {user_name}!**\n\n"
+        "**I ᴀᴍ A Fɪʟᴇ Sᴛᴏʀᴇ Bᴏᴛ.**\n\n"
+        "**Pᴏᴡᴇʀᴇᴅ Bʏ: @Aero_Unity**"
     )
     buttons = [
-        [InlineKeyboardButton("Help", callback_data="about_menu"),
-         InlineKeyboardButton("Close", callback_data="close")]
+        [InlineKeyboardButton("• Aʙᴏᴜᴛ •", callback_data="about_menu"),
+         InlineKeyboardButton("• Cʟᴏsᴇ •", callback_data="close")]
     ]
     try:
         await callback.message.edit_caption(
