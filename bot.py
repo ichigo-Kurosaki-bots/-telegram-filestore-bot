@@ -80,12 +80,12 @@ async def start_handler(client: Client, message: Message):
             buttons.append([InlineKeyboardButton(ch["channel_title"], url=ch["invite_link"])])
         
         try_again_data = f"try_again_{param}" if param else "try_again_none"
-        buttons.append([InlineKeyboardButton("Try Again 🔄", callback_data=try_again_data)])
+        buttons.append([InlineKeyboardButton("• Tʀʏ Aɢᴀɪɴ •", callback_data=try_again_data)])
 
         text = (
-            "**HELLO THERE..! ⚡**\n\n"
-            "🗨️ **PLEASE JOIN ALL OF OUR CHANNELS FIRST THEN CLICK ON TRY AGAIN...❗️**\n\n"
-            "**Channel Subscription Status:**\n\n" + "\n".join(status_list)
+            "**Hɪɪ..! ⚡**\n\n"
+            "**Pʟᴇᴀsᴇ Jᴏɪɴ Aʟʟ Oғ Oᴜʀ Cʜᴀɴɴᴇʟs Fɪʀsᴛ Tʜᴇɴ Cʟɪᴄᴋ Oɴ Tʀʏ Aɢᴀɪɴ...❗️**\n\n"
+            "**Cʜᴀɴɴᴇʟ Sᴜʙsᴄʀɪᴘᴛɪᴏɴ Sᴛᴀᴛᴜs:**\n\n" + "\n".join(status_list)
         )
 
         await message.reply_photo(
@@ -98,14 +98,13 @@ async def start_handler(client: Client, message: Message):
     # If already joined and no parameters provided, show Start Welcome screen (Screenshot 1 style)
     if not param:
         text = (
-            f"**Hi There... {user_name}!** 💥\n\n"
-            "**I AM A PREMIUM FILE STORE BOT.**\n"
-            "**I CAN GENERATE LINKS DIRECTLY WITH NO PROBLEMS**\n"
-            "**Powered By:** @Aero_Unity"
+            f"**Wᴇʟᴄᴏᴍᴇ {user_name}!**\n"
+            "**I ᴀᴍ A Fɪʟᴇ Sᴛᴏʀᴇ Bᴏᴛ.**\n\n"
+            "**Pᴏᴡᴇʀᴇᴅ Bʏ: @Aero_Unity**"
         )
         buttons = [
-            [InlineKeyboardButton("Help", callback_data="about_menu"),
-             InlineKeyboardButton("Close", callback_data="close")]
+            [InlineKeyboardButton("• Aʙᴏᴜᴛ •", callback_data="about_menu"),
+             InlineKeyboardButton("• Cʟᴏsᴇ •", callback_data="close")]
         ]
         await message.reply_photo(
             photo=ABOUT_IMAGE.strip(),
@@ -127,7 +126,7 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
         else:
             msg_ids = [int(data)]
     except Exception:
-        await client.send_message(chat_id, "❌ **Invalid link or parameter!**")
+        await client.send_message(chat_id, "‼️ **Iɴᴠᴀʟɪᴅ ʟɪɴᴋ ᴏʀ ᴘᴀʀᴀᴍᴇᴛᴇʀ !**")
         return
 
     sent_messages = []
@@ -146,8 +145,8 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
     if sent_messages:
         warn_msg = await client.send_message(
             chat_id=chat_id,
-            text=f"⚠️ **This file is deleting automatically in {AUTO_DELETE_TIME // 60} minutes.**\n\n"
-                 f" **Forward it to your Saved Messages..!**"
+            text=f" **Tʜɪs Fɪʟᴇ ɪs ᴅᴇʟᴇᴛɪɴɢ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ɪɴ {AUTO_DELETE_TIME // 60} ᴍɪɴᴜᴛᴇs **\n\n"
+                 f" **Fᴏʀᴡᴀʀᴅ ɪɴ ʏᴏᴜʀ Sᴀᴠᴇᴅ Mᴇssᴀɢᴇs..!.!**"
         )
         
         asyncio.create_task(delete_files_after_delay(client, chat_id, sent_messages, warn_msg, AUTO_DELETE_TIME))
