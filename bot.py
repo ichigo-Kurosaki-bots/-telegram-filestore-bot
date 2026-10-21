@@ -438,21 +438,13 @@ async def broadcast_cmd(client: Client, message: Message):
     users = await db.get_all_users()
     await message.reply_text(f"📢 **Starting broadcast to `{len(users)}` users...**")
 
-    raw_text = reply.text or reply.caption or ""
-    bold_text = f"**{raw_text}**" if raw_text else None
-
     success = 0
     failed = 0
 
     for user_id in users:
         try:
-            if bold_text:
-                sent_msg = await reply.copy(
-                    chat_id=user_id,
-                    caption=bold_text
-                )
-            else:
-                sent_msg = await reply.copy(chat_id=user_id)
+            # Forwarding the message preserves text, media, formatting, AND inline buttons entirely without errors
+            sent_msg = await reply.forward(chat_id=user_id)
             
             if should_pin:
                 await sent_msg.pin(both_sides=True)
@@ -470,20 +462,13 @@ async def broadcast_cmd(client: Client, message: Message):
             print(f"Broadcast error for user {user_id}: {e}")
             failed += 1
 
+    # Send completion summary in bold
     await message.reply_text(
         f"✅ **Broadcast Completed!**\n\n"
         f"• **Successful:** `{success}`\n"
         f"• **Failed:** `{failed}`"
     )
 
-    try:
-        if bold_text:
-            await reply.copy(chat_id=message.chat.id, caption=bold_text)
-        else:
-            await reply.copy(chat_id=message.chat.id)
-        await message.reply_text("📌 **Above is the message that was broadcasted along with its buttons.**")
-    except Exception:
-        pass
 
 async def handle_ping(request):
     return web.Response(text="Bot is running 24/7!")
