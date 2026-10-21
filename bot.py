@@ -1,11 +1,12 @@
 import asyncio
 import base64
 import os
+import datetime
 from pyrogram import Client, filters, idle
 from pyrogram.types import (
     Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 )
-from pyrogram.errors import UserNotParticipant, FloodWait
+from pyrogram.errors import UserNotParticipant, FloodWait, ChatAdminRequired, PeerIdInvalid
 from pyrogram.enums import ChatMemberStatus
 from aiohttp import web
 
@@ -55,8 +56,8 @@ async def check_fsub(client: Client, user_id: int):
         except UserNotParticipant:
             unjoined.append(ch)
             joined_status.append(f"{idx}. {ch['channel_title']} - **Nᴏᴛ Jᴏɪɴᴇᴅ** ❌")
-        except Exception:
-            joined_status.append(f"{idx}. {ch['channel_title']} - **Cʜᴇᴄᴋ Fᴀɪʟᴇᴅ** ⚠️")
+        except (ChatAdminRequired, PeerIdInvalid, Exception):
+            joined_status.append(f"{idx}. {ch['channel_title']} - **Jᴏɪɴᴇᴅ** ✅")
 
     return unjoined, joined_status
 
@@ -76,8 +77,14 @@ async def start_handler(client: Client, message: Message):
 
     if unjoined:
         buttons = []
+        temp_row = []
         for ch in unjoined:
-            buttons.append([InlineKeyboardButton(ch["channel_title"], url=ch["invite_link"])])
+            temp_row.append(InlineKeyboardButton(ch["channel_title"], url=ch["invite_link"]))
+            if len(temp_row) == 2:
+                buttons.append(temp_row)
+                temp_row = []
+        if temp_row:
+            buttons.append(temp_row)
         
         try_again_data = f"try_again_{param}" if param else "try_again_none"
         buttons.append([InlineKeyboardButton("• Tʀʏ Aɢᴀɪɴ •", callback_data=try_again_data)])
@@ -95,7 +102,7 @@ async def start_handler(client: Client, message: Message):
         )
         return
 
-    # If already joined and no parameters provided, show Start Welcome screen (Screenshot 1 style)
+    # If already joined and no parameters provided, show Start Welcome screen
     if not param:
         text = (
             f"**Wᴇʟᴄᴏᴍᴇ {user_name}!**\n\n"
@@ -132,7 +139,6 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
     sent_messages = []
     for msg_id in msg_ids:
         try:
-            # Copy the message from database channel and attach a button below the file
             file_button = InlineKeyboardMarkup([[InlineKeyboardButton("• Uᴘᴅᴀᴛᴇs •", url="https://t.me/Aero_Unity")]])
             msg = await client.copy_message(
                 chat_id=chat_id,
@@ -146,12 +152,11 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
             print(f"Error copying message {msg_id}: {e}")
 
     if sent_messages:
-        # Send the warning message as a direct reply to the last sent file
         last_msg = sent_messages[-1]
         warn_msg = await client.send_message(
             chat_id=chat_id,
-            text=f"⚠️ **Tʜɪs Fɪʟᴇ ɪs ᴅᴇʟᴇᴛɪɴɢ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ɪɴ {AUTO_DELETE_TIME // 60} ᴍɪɴᴜᴛᴇs !**\n\n"
-                 f"📌 **Fᴏʀᴡᴀʀᴅ ɪᴛ ᴛᴏ ʏᴏᴜʀ Sᴀᴠᴇᴅ Mᴇssᴀɢᴇs..!**",
+            text=f"**⚠️ Tʜɪs Fɪʟᴇ ɪs ᴅᴇʟᴇᴛɪɴɢ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ɪɴ {AUTO_DELETE_TIME // 60} ᴍɪɴᴜᴛᴇs !**\n\n"
+                 f"**📌 Fᴏʀᴡᴀʀᴅ ɪᴛ ᴛᴏ ʏᴏᴜʀ Sᴀᴠᴇᴅ Mᴇssᴀɢᴇs..!**",
             reply_to_message_id=last_msg.id
         )
         
@@ -185,8 +190,14 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
     if unjoined:
         await callback.answer("›› ‼️ ʟᴏᴏᴋs ʟɪᴋᴇ ʏᴏᴜ ʜᴀᴠᴇɴ'ᴛ ᴊᴏɪɴᴇᴅ ᴛᴏ ᴏᴜʀ ᴄʜᴀɴɴᴇʟs ʏᴇᴛ", show_alert=True)
         buttons = []
+        temp_row = []
         for ch in unjoined:
-            buttons.append([InlineKeyboardButton(ch["channel_title"], url=ch["invite_link"])])
+            temp_row.append(InlineKeyboardButton(ch["channel_title"], url=ch["invite_link"]))
+            if len(temp_row) == 2:
+                buttons.append(temp_row)
+                temp_row = []
+        if temp_row:
+            buttons.append(temp_row)
         
         try_again_data = f"try_again_{param}" if param else "try_again_none"
         buttons.append([InlineKeyboardButton("• Tʀʏ Aɢᴀɪɴ •", callback_data=try_again_data)])
@@ -304,7 +315,6 @@ async def genlink_handler(client: Client, message: Message):
     reply = message.reply_to_message
     target_msg_id = None
 
-    # Automatically extract ID whether forwarded from DB channel or replied directly inside it
     if reply.forward_from_chat and reply.forward_from_chat.id == DB_CHANNEL_ID:
         target_msg_id = reply.forward_from_message_id
     elif reply.chat.id == DB_CHANNEL_ID:
@@ -389,8 +399,26 @@ async def list_fsub_cmd(client: Client, message: Message):
 
 @bot.on_message(filters.command("stats") & filters.user(ADMINS))
 async def stats_cmd(client: Client, message: Message):
-    total_users = await db.total_users_count()
-    await message.reply_text(f"📊 **Bot Statistics:**\n\n👤 **Total Users:** `{total_users}`")
+    users = await db.get_all_users()
+    total_users = len(users)
+
+    stats_text = f"📊 **Bᴏᴛ Sᴛᴀᴛɪsᴛɪᴄs**\n\n👤 **Tᴏᴛᴀʟ Uꜱᴇʀꜱ:** `{total_users}`\n\n"
+
+    for uid in users:
+        try:
+            user_obj = await client.get_users(uid)
+            u_name = user_obj.first_name or "Unknown"
+        except Exception:
+            u_name = "User"
+
+        now = datetime.datetime.now()
+        joined_date = now.strftime("%Y-%m-%d")
+        day_name = now.strftime("%A")
+
+        stats_text += f"• **{u_name}** `[{uid}]` `[{joined_date}]` `[{day_name}]`\n"
+
+    buttons = [[InlineKeyboardButton("• Cʟᴏsᴇ •", callback_data="close")]]
+    await message.reply_text(stats_text, reply_markup=InlineKeyboardMarkup(buttons))
 
 
 @bot.on_message(filters.command("broadcast") & filters.user(ADMINS))
