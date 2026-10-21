@@ -334,11 +334,22 @@ async def genlink_handler(client: Client, message: Message):
 async def batch_handler(client: Client, message: Message):
     args = message.text.split()
     if len(args) < 3:
-        await message.reply_text("📌 **Usage:** `/batch [start_msg_id] [end_msg_id]`")
+        await message.reply_text("📌 **Usage:** `/batch [start_msg_id_or_link] [end_msg_id_or_link]`")
         return
 
-    start_id = args[1]
-    end_id = args[2]
+    def extract_id(arg: str) -> str:
+        # If user passed a full Telegram URL, extract the last part (message ID)
+        if "t.me/" in arg:
+            return arg.strip("/").split("/")[-1]
+        return arg
+
+    start_id = extract_id(args[1])
+    end_id = extract_id(args[2])
+
+    if not start_id.isdigit() or not end_id.isdigit():
+        await message.reply_text("❌ **Invalid message IDs or links provided! Please use numbers or valid message URLs.**")
+        return
+
     raw_str = f"BATCH_{start_id}_{end_id}"
     encoded = encode_data(raw_str)
 
