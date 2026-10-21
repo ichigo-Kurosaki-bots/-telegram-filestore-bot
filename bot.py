@@ -65,11 +65,13 @@ async def check_fsub(client: Client, user_id: int):
 @bot.on_message(filters.command("start") & filters.private)
 async def start_handler(client: Client, message: Message):
     user_id = message.from_user.id
+    user_name = message.from_user.first_name
     await db.add_user(user_id)
     
     args = message.text.split(maxsplit=1)
     param = args[1] if len(args) > 1 else None
 
+    # Check Force Subscription status
     unjoined, status_list = await check_fsub(client, user_id)
 
     if unjoined:
@@ -93,17 +95,16 @@ async def start_handler(client: Client, message: Message):
         )
         return
 
+    # If already joined and no parameters provided, show Start Welcome screen (Screenshot 1 style)
     if not param:
         text = (
-            "**ABOUT US...**\n\n"
-            "▶ **MADE FOR :** @Animes_Unity\n"
-            "▶ **OWNER :** ANONYMOUS\n"
-            "▶ **POWERED BY :** @The_Vanquishers\n"
-            "▶ **ADULT CHANNEL :** @AdultxUnity\n\n"
-            "**ADIOS !!** 🥳"
+            f"**Hi There... {user_name}!** 💥\n\n"
+            "**I AM A PREMIUM FILE STORE BOT.**\n"
+            "**I CAN GENERATE LINKS DIRECTLY WITH NO PROBLEMS**\n"
+            "**Powered By:** @The_Vanquishers"
         )
         buttons = [
-            [InlineKeyboardButton("Back", callback_data="about_back"),
+            [InlineKeyboardButton("Help", callback_data="about_menu"),
              InlineKeyboardButton("Close", callback_data="close")]
         ]
         await message.reply_photo(
@@ -113,6 +114,7 @@ async def start_handler(client: Client, message: Message):
         )
         return
 
+    # Deliver Stored File(s) if joined and param exists
     await send_stored_files(client, message.chat.id, param)
 
 
@@ -169,6 +171,7 @@ async def delete_files_after_delay(client, chat_id, messages, warn_msg, delay):
 @bot.on_callback_query(filters.regex(r"^try_again_"))
 async def try_again_callback(client: Client, callback: CallbackQuery):
     user_id = callback.from_user.id
+    user_name = callback.from_user.first_name
     param = callback.data.split("try_again_")[1]
     param = None if param == "none" else param
 
@@ -218,15 +221,13 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
         await send_stored_files(client, callback.message.chat.id, param)
     else:
         text = (
-            "**ABOUT US...**\n\n"
-            "▶ **MADE FOR :** @Animes_Unity\n"
-            "▶ **OWNER :** ANONYMOUS\n"
-            "▶ **POWERED BY :** @The_Vanquishers\n"
-            "▶ **ADULT CHANNEL :** @AdultxUnity\n\n"
-            "**ADIOS !!** 🥳"
+            f"**Hi There... {user_name}!** 💥\n\n"
+            "**I AM A PREMIUM FILE STORE BOT.**\n"
+            "**I CAN GENERATE LINKS DIRECTLY WITH NO PROBLEMS**\n"
+            "**Powered By:** @The_Vanquishers"
         )
         buttons = [
-            [InlineKeyboardButton("Back", callback_data="about_back"),
+            [InlineKeyboardButton("Help", callback_data="about_menu"),
              InlineKeyboardButton("Close", callback_data="close")]
         ]
         await callback.message.reply_photo(
@@ -238,12 +239,55 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
 
 @bot.on_callback_query(filters.regex("close"))
 async def close_callback(client: Client, callback: CallbackQuery):
-    await callback.message.delete()
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
+
+
+@bot.on_callback_query(filters.regex("about_menu"))
+async def about_menu_callback(client: Client, callback: CallbackQuery):
+    text = (
+        "**ABOUT US...**\n\n"
+        "▶ **MADE FOR :** @Animes_Unity\n"
+        "▶ **OWNER :** ANONYMOUS\n"
+        "▶ **POWERED BY :** @The_Vanquishers\n"
+        "▶ **ADULT CHANNEL :** @AdultxUnity\n\n"
+        "**ADIOS !!** 🥳"
+    )
+    buttons = [
+        [InlineKeyboardButton("Back", callback_data="about_back"),
+         InlineKeyboardButton("Close", callback_data="close")]
+    ]
+    try:
+        await callback.message.edit_caption(
+            caption=text,
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+    except Exception:
+        pass
 
 
 @bot.on_callback_query(filters.regex("about_back"))
 async def about_back_callback(client: Client, callback: CallbackQuery):
-    await callback.answer("You are on the main menu!")
+    user_name = callback.from_user.first_name
+    text = (
+        f"**Hi There... {user_name}!** 💥\n\n"
+        "**I AM A PREMIUM FILE STORE BOT.**\n"
+        "**I CAN GENERATE LINKS DIRECTLY WITH NO PROBLEMS**\n"
+        "**Powered By:** @The_Vanquishers"
+    )
+    buttons = [
+        [InlineKeyboardButton("Help", callback_data="about_menu"),
+         InlineKeyboardButton("Close", callback_data="close")]
+    ]
+    try:
+        await callback.message.edit_caption(
+            caption=text,
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+    except Exception:
+        pass
 
 
 # ---------------- OWNER ONLY ADMIN COMMANDS ----------------
@@ -251,11 +295,25 @@ async def about_back_callback(client: Client, callback: CallbackQuery):
 @bot.on_message(filters.command("genlink") & filters.user(ADMINS))
 async def genlink_handler(client: Client, message: Message):
     if not message.reply_to_message:
-        await message.reply_text("❌ Reply to a message in the storage channel to generate a link.")
+        await message.reply_text("❌ Reply to a file or message to generate a link.")
         return
 
-    msg = message.reply_to_message
-    encoded_id = encode_data(str(msg.id))
+    reply = message.reply_to_message
+    target_msg_id = None
+
+    # Automatically extract ID whether forwarded from DB channel or replied directly inside it
+    if reply.forward_from_chat and reply.forward_from_chat.id == DB_CHANNEL_ID:
+        target_msg_id = reply.forward_from_message_id
+    elif reply.chat.id == DB_CHANNEL_ID:
+        target_msg_id = reply.id
+    else:
+        target_msg_id = reply.id
+
+    if not target_msg_id:
+        await message.reply_text("❌ Could not determine the original database message ID.")
+        return
+
+    encoded_id = encode_data(str(target_msg_id))
     bot_username = (await client.get_me()).username
     link = f"https://t.me/{bot_username}?start={encoded_id}"
 
@@ -385,28 +443,20 @@ async def start_web_server():
     await site.start()
 
 
-# ---------------- MAIN ENTRYPOINT (Using bot.run) ----------------
+# ---------------- MAIN ENTRYPOINT ----------------
 
-async def main():
-    print("Starting 24/7 Keep-Alive Web Server...")
-    await start_web_server()
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(start_web_server())
     print("Web Server started successfully.")
 
     print("Testing MongoDB connection...")
     try:
-        await db.get_fsub_channels()
+        loop.run_until_complete(db.get_fsub_channels())
         print("MongoDB connection verified successfully!")
     except Exception as e:
         print(f"CRITICAL: MongoDB connection failed: {e}")
-        return
 
-    print("Starting Telegram Bot via bot.run()...")
-
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
-    
-    # Start bot using Pyrogram's native runner and idle loop
     with bot:
         me = bot.get_me()
         print(f"SUCCESS! Bot is online as: @{me.username} (ID: {me.id})")
