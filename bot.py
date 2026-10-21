@@ -1,7 +1,7 @@
 import asyncio
 import base64
 import os
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 from pyrogram.types import (
     Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 )
@@ -15,7 +15,7 @@ from config import (
 )
 import database as db
 
-# ---- ROBUST ADMINS PARSER (Ensures Owner/Admin checks work perfectly) ----
+# ---- ROBUST ADMINS PARSER ----
 if isinstance(ADMINS, str):
     ADMINS = [int(x.strip()) for x in ADMINS.split(",") if x.strip().isdigit()]
 elif isinstance(ADMINS, int):
@@ -70,7 +70,6 @@ async def start_handler(client: Client, message: Message):
     args = message.text.split(maxsplit=1)
     param = args[1] if len(args) > 1 else None
 
-    # Check Force Subscription status
     unjoined, status_list = await check_fsub(client, user_id)
 
     if unjoined:
@@ -94,7 +93,6 @@ async def start_handler(client: Client, message: Message):
         )
         return
 
-    # If already joined and no parameters provided, show About Us screen
     if not param:
         text = (
             "**ABOUT US...**\n\n"
@@ -115,7 +113,6 @@ async def start_handler(client: Client, message: Message):
         )
         return
 
-    # Deliver Stored File(s) if joined
     await send_stored_files(client, message.chat.id, param)
 
 
@@ -388,7 +385,7 @@ async def start_web_server():
     await site.start()
 
 
-# ---------------- MAIN ENTRYPOINT ----------------
+# ---------------- MAIN ENTRYPOINT (Using bot.run) ----------------
 
 async def main():
     print("Starting 24/7 Keep-Alive Web Server...")
@@ -403,14 +400,16 @@ async def main():
         print(f"CRITICAL: MongoDB connection failed: {e}")
         return
 
-    print("Starting Telegram Bot...")
-    await bot.start()
-    
-    me = await bot.get_me()
-    print(f"SUCCESS! Bot is online as: @{me.username} (ID: {me.id})")
-    print(f"Authorized Admin IDs: {ADMINS}")
-    
-    await asyncio.Event().wait()
+    print("Starting Telegram Bot via bot.run()...")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+    
+    # Start bot using Pyrogram's native runner and idle loop
+    with bot:
+        me = bot.get_me()
+        print(f"SUCCESS! Bot is online as: @{me.username} (ID: {me.id})")
+        print(f"Authorized Admin IDs: {ADMINS}")
+        print("Bot is up and running successfully!")
+        idle()
