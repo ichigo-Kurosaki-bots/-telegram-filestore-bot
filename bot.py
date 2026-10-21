@@ -98,7 +98,7 @@ async def start_handler(client: Client, message: Message):
     # If already joined and no parameters provided, show Start Welcome screen (Screenshot 1 style)
     if not param:
         text = (
-            f"**Wᴇʟᴄᴏᴍᴇ {user_name}!**\n"
+            f"**Wᴇʟᴄᴏᴍᴇ {user_name}!**\n\n"
             "**I ᴀᴍ A Fɪʟᴇ Sᴛᴏʀᴇ Bᴏᴛ.**\n\n"
             "**Pᴏᴡᴇʀᴇᴅ Bʏ: @Aero_Unity**"
         )
@@ -220,7 +220,7 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
         await send_stored_files(client, callback.message.chat.id, param)
     else:
         text = (
-            f"**Wᴇʟᴄᴏᴍᴇ {user_name}!**\n"
+            f"**Wᴇʟᴄᴏᴍᴇ {user_name}!**\n\n"
             "**I ᴀᴍ A Fɪʟᴇ Sᴛᴏʀᴇ Bᴏᴛ.**\n\n"
             "**Pᴏᴡᴇʀᴇᴅ Bʏ: @Aero_Unity**"
         )
@@ -247,14 +247,14 @@ async def close_callback(client: Client, callback: CallbackQuery):
 async def about_menu_callback(client: Client, callback: CallbackQuery):
     text = (
         "**Aʙᴏᴜᴛ Mᴇ...**\n\n"
-        "›› **Mᴀᴅᴇ Fᴏʀ :** @Ongoing_Donghua_Aero\n"
+        "›› **Mᴀᴅᴇ Fᴏʀ : @Ongoing_Donghua_Aero**\n"
         "›› **Oᴡɴᴇʀ : @Mr_Mohammed_29**\n"
         "›› **Pᴏᴡᴇʀᴇᴅ Bʏ : @Aero_Unity**\n"
         "›› **Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ : @Coders_Grp**\n\n"
         "**Aᴅɪᴏs !!** 🥳"
     )
     buttons = [
-        [InlineKeyboardButton("• Aʙᴏᴜᴛ Mᴇ •", callback_data="about_back"),
+        [InlineKeyboardButton("• Hᴏᴍᴇ •", callback_data="about_back"),
          InlineKeyboardButton("• Cʟᴏsᴇ •", callback_data="close")]
     ]
     try:
