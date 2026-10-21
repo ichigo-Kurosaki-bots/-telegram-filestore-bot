@@ -67,7 +67,6 @@ async def start_handler(client: Client, message: Message):
     args = message.text.split(maxsplit=1)
     param = args[1] if len(args) > 1 else None
 
-    # Check Force Subscription status
     unjoined, status_list = await check_fsub(client, user_id)
 
     if unjoined:
@@ -113,6 +112,13 @@ async def start_handler(client: Client, message: Message):
             reply_markup=InlineKeyboardMarkup(buttons)
         )
         return
+
+    wait_msg = await message.reply_text("**Wait a sec...**")
+    await asyncio.sleep(0.9)
+    try:
+        await wait_msg.delete()
+    except Exception:
+        pass
 
     await send_stored_files(client, message.chat.id, param)
 
@@ -235,6 +241,12 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
         pass
 
     if param:
+        wait_msg = await callback.message.reply_text("**Wait a sec...**")
+        await asyncio.sleep(1)
+        try:
+            await wait_msg.delete()
+        except Exception:
+            pass
         await send_stored_files(client, callback.message.chat.id, param)
     else:
         text = (
