@@ -177,18 +177,18 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
     unjoined, status_list = await check_fsub(client, user_id)
 
     if unjoined:
-        await callback.answer("❌ You still haven't joined all channels!", show_alert=True)
+        await callback.answer("›› ‼️ ʟᴏᴏᴋs ʟɪᴋᴇ ʏᴏᴜ ʜᴀᴠᴇɴ'ᴛ ᴊᴏɪɴᴇᴅ ᴛᴏ ᴏᴜʀ ᴄʜᴀɴɴᴇʟs ʏᴇᴛ", show_alert=True)
         buttons = []
         for ch in unjoined:
             buttons.append([InlineKeyboardButton(ch["channel_title"], url=ch["invite_link"])])
         
         try_again_data = f"try_again_{param}" if param else "try_again_none"
-        buttons.append([InlineKeyboardButton("Try Again 🔄", callback_data=try_again_data)])
+        buttons.append([InlineKeyboardButton("• Tʀʏ Aɢᴀɪɴ •", callback_data=try_again_data)])
 
         text = (
-            "**HELLO THERE..! ⚡**\n\n"
-            "🗨️ **PLEASE JOIN ALL OF OUR CHANNELS FIRST THEN CLICK ON TRY AGAIN...❗️**\n\n"
-            "**Channel Subscription Status:**\n\n" + "\n".join(status_list)
+            "**Hɪɪ.! ⚡**\n\n"
+            " **Pʟᴇᴀsᴇ Jᴏɪɴ Aʟʟ Oғ Oᴜʀ Cʜᴀɴɴᴇʟs Fɪʀsᴛ Tʜᴇɴ Cʟɪᴄᴋ Oɴ Tʀʏ Aɢᴀɪɴ...❗️**\n\n"
+            "**Cʜᴀɴɴᴇʟ Sᴜʙsᴄʀɪᴘᴛɪᴏɴ Sᴛᴀᴛᴜs:**\n\n" + "\n".join(status_list)
         )
         
         try:
@@ -220,14 +220,13 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
         await send_stored_files(client, callback.message.chat.id, param)
     else:
         text = (
-            f"**Hi There... {user_name}!** 💥\n\n"
-            "**I AM A PREMIUM FILE STORE BOT.**\n"
-            "**I CAN GENERATE LINKS DIRECTLY WITH NO PROBLEMS**\n"
-            "**Powered By:** @Aero_Unity"
+            f"**Wᴇʟᴄᴏᴍᴇ {user_name}!**\n"
+            "**I ᴀᴍ A Fɪʟᴇ Sᴛᴏʀᴇ Bᴏᴛ.**\n\n"
+            "**Pᴏᴡᴇʀᴇᴅ Bʏ: @Aero_Unity**"
         )
         buttons = [
-            [InlineKeyboardButton("Help", callback_data="about_menu"),
-             InlineKeyboardButton("Close", callback_data="close")]
+            [InlineKeyboardButton("• Aʙᴏᴜᴛ •", callback_data="about_menu"),
+             InlineKeyboardButton("• Cʟᴏsᴇ •", callback_data="close")]
         ]
         await callback.message.reply_photo(
             photo=ABOUT_IMAGE.strip(),
@@ -247,7 +246,7 @@ async def close_callback(client: Client, callback: CallbackQuery):
 @bot.on_callback_query(filters.regex("about_menu"))
 async def about_menu_callback(client: Client, callback: CallbackQuery):
     text = (
-        "**ABOUT US...**\n\n"
+        "**Aʙᴏᴜᴛ Mᴇ...**\n\n"
         "›› **MADE FOR :** @Aero_Unity\n"
         "›› **OWNER :** @Mr_Mohammed_29\n"
         "›› **POWERED BY :** @Aero_Unity\n"
