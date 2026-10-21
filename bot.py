@@ -446,34 +446,23 @@ async def broadcast_cmd(client: Client, message: Message):
     users = await db.get_all_users()
     await message.reply_text(f"📢 **Starting broadcast to `{len(users)}` users...**")
 
-    # Extract text or caption from replied message
+    # Extract raw text or caption
     raw_text = reply.text or reply.caption or ""
-    
-    # Wrap text in bold formatting if present
     bold_text = f"**{raw_text}**" if raw_text else None
-    
-    # Preserve inline markup buttons if present
-    markup = reply.reply_markup
 
     success = 0
     failed = 0
 
     for user_id in users:
         try:
-            # Copy message with bold caption/text and attached buttons
-            if reply.text:
-                sent_msg = await client.send_message(
-                    chat_id=user_id,
-                    text=bold_text,
-                    reply_markup=markup,
-                    disable_web_page_preview=True
-                )
-            else:
+            # Use reply.copy() to seamlessly copy text, photos, formatting, and buttons
+            if bold_text:
                 sent_msg = await reply.copy(
                     chat_id=user_id,
-                    caption=bold_text,
-                    reply_markup=markup
+                    caption=bold_text
                 )
+            else:
+                sent_msg = await reply.copy(chat_id=user_id)
             
             if should_pin:
                 await sent_msg.pin(both_sides=True)
@@ -487,7 +476,8 @@ async def broadcast_cmd(client: Client, message: Message):
             await asyncio.sleep(0.05)
         except FloodWait as e:
             await asyncio.sleep(e.value)
-        except Exception:
+        except Exception as e:
+            print(f"Broadcast error for user {user_id}: {e}")
             failed += 1
 
     # Send completion summary in bold
@@ -499,19 +489,10 @@ async def broadcast_cmd(client: Client, message: Message):
 
     # Preview confirmation back to the admin
     try:
-        if reply.text:
-            await client.send_message(
-                chat_id=message.chat.id,
-                text=bold_text,
-                reply_markup=markup,
-                disable_web_page_preview=True
-            )
+        if bold_text:
+            await reply.copy(chat_id=message.chat.id, caption=bold_text)
         else:
-            await reply.copy(
-                chat_id=message.chat.id,
-                caption=bold_text,
-                reply_markup=markup
-            )
+            await reply.copy(chat_id=message.chat.id)
         await message.reply_text("📌 **Above is the message that was broadcasted along with its buttons.**")
     except Exception:
         pass
