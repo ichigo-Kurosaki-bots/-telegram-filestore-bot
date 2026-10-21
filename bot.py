@@ -409,7 +409,6 @@ async def list_fsub_cmd(client: Client, message: Message):
 
     await message.reply_text(text, disable_web_page_preview=True)
 
-
 @bot.on_message(filters.command("stats") & filters.user(ADMINS))
 async def stats_cmd(client: Client, message: Message):
     users = await db.get_all_users()
@@ -428,31 +427,53 @@ async def stats_cmd(client: Client, message: Message):
         joined_date = now.strftime("%Y-%m-%d")
         day_name = now.strftime("%A")
 
-        stats_text += f"• **{u_name}** `[{uid}]` `[{joined_date}]` `[{day_name}]`\n"
+        stats_text += f"• **[{u_name}](tg://user?id={uid})** `[{uid}]` `[{joined_date}]` `[{day_name}]`\n"
 
     buttons = [[InlineKeyboardButton("• Cʟᴏsᴇ •", callback_data="close")]]
-    await message.reply_text(stats_text, reply_markup=InlineKeyboardMarkup(buttons))
-
+    await message.reply_text(stats_text, reply_markup=InlineKeyboardMarkup(buttons), disable_web_page_preview=True)
 
 @bot.on_message(filters.command("broadcast") & filters.user(ADMINS))
 async def broadcast_cmd(client: Client, message: Message):
     if not message.reply_to_message:
-        await message.reply_text("📌 Reply to a message with `/broadcast`, `/broadcast pin`, or `/broadcast unpin`")
+        await message.reply_text("📌 **Reply to a message with `/broadcast`, `/broadcast pin`, or `/broadcast unpin`**")
         return
 
+    reply = message.reply_to_message
     args = message.text.lower().split()
     should_pin = "pin" in args
     should_unpin = "unpin" in args
     
     users = await db.get_all_users()
-    await message.reply_text(f"📢 Starting broadcast to `{len(users)}` users...")
+    await message.reply_text(f"📢 **Starting broadcast to `{len(users)}` users...**")
+
+    # Extract text or caption from replied message
+    raw_text = reply.text or reply.caption or ""
+    
+    # Wrap text in bold formatting if present
+    bold_text = f"**{raw_text}**" if raw_text else None
+    
+    # Preserve inline markup buttons if present
+    markup = reply.reply_markup
 
     success = 0
     failed = 0
 
     for user_id in users:
         try:
-            sent_msg = await message.reply_to_message.copy(chat_id=user_id)
+            # Copy message with bold caption/text and attached buttons
+            if reply.text:
+                sent_msg = await client.send_message(
+                    chat_id=user_id,
+                    text=bold_text,
+                    reply_markup=markup,
+                    disable_web_page_preview=True
+                )
+            else:
+                sent_msg = await reply.copy(
+                    chat_id=user_id,
+                    caption=bold_text,
+                    reply_markup=markup
+                )
             
             if should_pin:
                 await sent_msg.pin(both_sides=True)
@@ -469,8 +490,31 @@ async def broadcast_cmd(client: Client, message: Message):
         except Exception:
             failed += 1
 
-    await message.reply_text(f"✅ **Broadcast Completed!**\n\n• **Successful:** `{success}`\n• **Failed:** `{failed}`")
+    # Send completion summary in bold
+    await message.reply_text(
+        f"✅ **Broadcast Completed!**\n\n"
+        f"• **Successful:** `{success}`\n"
+        f"• **Failed:** `{failed}`"
+    )
 
+    # Preview confirmation back to the admin
+    try:
+        if reply.text:
+            await client.send_message(
+                chat_id=message.chat.id,
+                text=bold_text,
+                reply_markup=markup,
+                disable_web_page_preview=True
+            )
+        else:
+            await reply.copy(
+                chat_id=message.chat.id,
+                caption=bold_text,
+                reply_markup=markup
+            )
+        await message.reply_text("📌 **Above is the message that was broadcasted along with its buttons.**")
+    except Exception:
+        pass
 
 # ---------------- 24/7 KEEP-ALIVE WEB SERVER ----------------
 
