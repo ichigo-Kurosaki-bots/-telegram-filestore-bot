@@ -49,14 +49,14 @@ async def check_fsub(client: Client, user_id: int):
             member = await client.get_chat_member(ch["channel_id"], user_id)
             if member.status in [ChatMemberStatus.LEFT, ChatMemberStatus.BANNED]:
                 unjoined.append(ch)
-                joined_status.append(f"{idx}. {ch['channel_title']} - **NOT JOINED** ❌")
+                joined_status.append(f"{idx}. {ch['channel_title']} - **Nᴏᴛ Jᴏɪɴᴇᴅ** ❌")
             else:
-                joined_status.append(f"{idx}. {ch['channel_title']} - **JOINED** ✅")
+                joined_status.append(f"{idx}. {ch['channel_title']} - **Jᴏɪɴᴇᴅ** ✅")
         except UserNotParticipant:
             unjoined.append(ch)
-            joined_status.append(f"{idx}. {ch['channel_title']} - **NOT JOINED** ❌")
+            joined_status.append(f"{idx}. {ch['channel_title']} - **Nᴏᴛ Jᴏɪɴᴇᴅ** ❌")
         except Exception:
-            joined_status.append(f"{idx}. {ch['channel_title']} - **CHECK FAILED** ⚠️")
+            joined_status.append(f"{idx}. {ch['channel_title']} - **Cʜᴇᴄᴋ Fᴀɪʟᴇᴅ** ⚠️")
 
     return unjoined, joined_status
 
@@ -101,7 +101,7 @@ async def start_handler(client: Client, message: Message):
             f"**Hi There... {user_name}!** 💥\n\n"
             "**I AM A PREMIUM FILE STORE BOT.**\n"
             "**I CAN GENERATE LINKS DIRECTLY WITH NO PROBLEMS**\n"
-            "**Powered By:** @The_Vanquishers"
+            "**Powered By:** @Aero_Unity"
         )
         buttons = [
             [InlineKeyboardButton("Help", callback_data="about_menu"),
@@ -147,7 +147,7 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
         warn_msg = await client.send_message(
             chat_id=chat_id,
             text=f"⚠️ **This file is deleting automatically in {AUTO_DELETE_TIME // 60} minutes.**\n\n"
-                 f"📌 **Forward it to your Saved Messages..!**"
+                 f" **Forward it to your Saved Messages..!**"
         )
         
         asyncio.create_task(delete_files_after_delay(client, chat_id, sent_messages, warn_msg, AUTO_DELETE_TIME))
@@ -224,7 +224,7 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
             f"**Hi There... {user_name}!** 💥\n\n"
             "**I AM A PREMIUM FILE STORE BOT.**\n"
             "**I CAN GENERATE LINKS DIRECTLY WITH NO PROBLEMS**\n"
-            "**Powered By:** @The_Vanquishers"
+            "**Powered By:** @Aero_Unity"
         )
         buttons = [
             [InlineKeyboardButton("Help", callback_data="about_menu"),
@@ -249,10 +249,10 @@ async def close_callback(client: Client, callback: CallbackQuery):
 async def about_menu_callback(client: Client, callback: CallbackQuery):
     text = (
         "**ABOUT US...**\n\n"
-        "▶ **MADE FOR :** @Animes_Unity\n"
-        "▶ **OWNER :** ANONYMOUS\n"
-        "▶ **POWERED BY :** @The_Vanquishers\n"
-        "▶ **ADULT CHANNEL :** @AdultxUnity\n\n"
+        "›› **MADE FOR :** @Aero_Unity\n"
+        "›› **OWNER :** @Mr_Mohammed_29\n"
+        "›› **POWERED BY :** @Aero_Unity\n"
+        "›› **SUPPORT GROUP :** @Coders_Grp\n\n"
         "**ADIOS !!** 🥳"
     )
     buttons = [
@@ -275,7 +275,7 @@ async def about_back_callback(client: Client, callback: CallbackQuery):
         f"**Hi There... {user_name}!** 💥\n\n"
         "**I AM A PREMIUM FILE STORE BOT.**\n"
         "**I CAN GENERATE LINKS DIRECTLY WITH NO PROBLEMS**\n"
-        "**Powered By:** @The_Vanquishers"
+        "**Powered By:** @Aero_Unity"
     )
     buttons = [
         [InlineKeyboardButton("Help", callback_data="about_menu"),
