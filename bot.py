@@ -16,7 +16,6 @@ from config import (
 )
 import database as db
 
-# ---- ROBUST ADMINS PARSER ----
 if isinstance(ADMINS, str):
     ADMINS = [int(x.strip()) for x in ADMINS.split(",") if x.strip().isdigit()]
 elif isinstance(ADMINS, int):
@@ -30,8 +29,6 @@ print(f"Initialized Admin IDs list: {ADMINS}")
 
 print("Initializing Pyrogram Client...")
 bot = Client("FileStoreBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
-
-# ---------------- HELPER FUNCTIONS ----------------
 
 def encode_data(data: str) -> str:
     return base64.urlsafe_b64encode(data.encode("ascii")).decode("ascii").strip("=")
@@ -60,8 +57,6 @@ async def check_fsub(client: Client, user_id: int):
             joined_status.append(f"{idx}. {ch['channel_title']} - **Jᴏɪɴᴇᴅ** ✅")
 
     return unjoined, joined_status
-
-# ---------------- PUBLIC USER COMMANDS ----------------
 
 @bot.on_message(filters.command("start") & filters.private)
 async def start_handler(client: Client, message: Message):
@@ -102,7 +97,6 @@ async def start_handler(client: Client, message: Message):
         )
         return
 
-    # If already joined and no parameters provided, show Start Welcome screen
     if not param:
         text = (
             f"**Wᴇʟᴄᴏᴍᴇ {user_name}!**\n\n"
@@ -120,9 +114,7 @@ async def start_handler(client: Client, message: Message):
         )
         return
 
-    # Deliver Stored File(s) if joined and param exists
     await send_stored_files(client, message.chat.id, param)
-
 
 async def send_stored_files(client: Client, chat_id: int, param: str):
     try:
@@ -137,9 +129,10 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
         return
 
     sent_messages = []
+    file_button = InlineKeyboardMarkup([[InlineKeyboardButton("• Uᴘᴅᴀᴛᴇs •", url="https://t.me/Aero_Unity")]])
+
     for msg_id in msg_ids:
         try:
-            file_button = InlineKeyboardMarkup([[InlineKeyboardButton("• Uᴘᴅᴀᴛᴇs •", url="https://t.me/Aero_Unity")]])
             msg = await client.copy_message(
                 chat_id=chat_id,
                 from_chat_id=DB_CHANNEL_ID,
@@ -163,7 +156,6 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
         except Exception as e:
             print(f"Error copying message {msg_id}: {e}")
 
-
     if sent_messages:
         last_msg = sent_messages[-1]
         warn_msg = await client.send_message(
@@ -174,7 +166,6 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
         )
         
         asyncio.create_task(delete_files_after_delay(client, chat_id, sent_messages, warn_msg, AUTO_DELETE_TIME))
-
 
 async def delete_files_after_delay(client, chat_id, messages, warn_msg, delay):
     await asyncio.sleep(delay)
@@ -187,10 +178,7 @@ async def delete_files_after_delay(client, chat_id, messages, warn_msg, delay):
         await client.delete_messages(chat_id, warn_msg.id)
     except Exception:
         pass
-
-
-# ---------------- CALLBACK HANDLERS ----------------
-
+        
 @bot.on_callback_query(filters.regex(r"^try_again_"))
 async def try_again_callback(client: Client, callback: CallbackQuery):
     user_id = callback.from_user.id
@@ -316,9 +304,6 @@ async def about_back_callback(client: Client, callback: CallbackQuery):
     except Exception:
         pass
 
-
-# ---------------- OWNER ONLY ADMIN COMMANDS ----------------
-
 @bot.on_message(filters.command("genlink") & filters.user(ADMINS))
 async def genlink_handler(client: Client, message: Message):
     if not message.reply_to_message:
@@ -345,7 +330,6 @@ async def genlink_handler(client: Client, message: Message):
 
     await message.reply_text(f"🔗 **Generated File Link:**\n\n`{link}`", disable_web_page_preview=True)
 
-
 @bot.on_message(filters.command("batch") & filters.user(ADMINS))
 async def batch_handler(client: Client, message: Message):
     args = message.text.split()
@@ -363,7 +347,6 @@ async def batch_handler(client: Client, message: Message):
 
     await message.reply_text(f"📦 **Generated Batch Link:**\n\n`{link}`", disable_web_page_preview=True)
 
-
 @bot.on_message(filters.command("addforcesub") & filters.user(ADMINS))
 async def add_fsub_cmd(client: Client, message: Message):
     args = message.text.split(maxsplit=3)
@@ -380,7 +363,6 @@ async def add_fsub_cmd(client: Client, message: Message):
     except Exception as e:
         await message.reply_text(f"❌ Error: {e}")
 
-
 @bot.on_message(filters.command("removeforcesub") & filters.user(ADMINS))
 async def rm_fsub_cmd(client: Client, message: Message):
     args = message.text.split()
@@ -394,7 +376,6 @@ async def rm_fsub_cmd(client: Client, message: Message):
         await message.reply_text(f"✅ Removed channel `{ch_id}` from Force Sub list.")
     except Exception as e:
         await message.reply_text(f"❌ Error: {e}")
-
 
 @bot.on_message(filters.command("forcesublist") & filters.user(ADMINS))
 async def list_fsub_cmd(client: Client, message: Message):
@@ -446,7 +427,6 @@ async def broadcast_cmd(client: Client, message: Message):
     users = await db.get_all_users()
     await message.reply_text(f"📢 **Starting broadcast to `{len(users)}` users...**")
 
-    # Extract raw text or caption
     raw_text = reply.text or reply.caption or ""
     bold_text = f"**{raw_text}**" if raw_text else None
 
@@ -455,7 +435,6 @@ async def broadcast_cmd(client: Client, message: Message):
 
     for user_id in users:
         try:
-            # Use reply.copy() to seamlessly copy text, photos, formatting, and buttons
             if bold_text:
                 sent_msg = await reply.copy(
                     chat_id=user_id,
@@ -480,14 +459,12 @@ async def broadcast_cmd(client: Client, message: Message):
             print(f"Broadcast error for user {user_id}: {e}")
             failed += 1
 
-    # Send completion summary in bold
     await message.reply_text(
         f"✅ **Broadcast Completed!**\n\n"
         f"• **Successful:** `{success}`\n"
         f"• **Failed:** `{failed}`"
     )
 
-    # Preview confirmation back to the admin
     try:
         if bold_text:
             await reply.copy(chat_id=message.chat.id, caption=bold_text)
@@ -496,8 +473,6 @@ async def broadcast_cmd(client: Client, message: Message):
         await message.reply_text("📌 **Above is the message that was broadcasted along with its buttons.**")
     except Exception:
         pass
-
-# ---------------- 24/7 KEEP-ALIVE WEB SERVER ----------------
 
 async def handle_ping(request):
     return web.Response(text="Bot is running 24/7!")
@@ -510,9 +485,6 @@ async def start_web_server():
     port = int(os.environ.get("PORT", 8080))
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
-
-
-# ---------------- MAIN ENTRYPOINT ----------------
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
