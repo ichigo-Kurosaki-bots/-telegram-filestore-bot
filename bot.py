@@ -113,13 +113,17 @@ async def start_handler(client: Client, message: Message):
         )
         return
 
-    wait_msg = await message.reply_text("**Wait a sec...**")
-    await asyncio.sleep(0.9)
+    checking_msg = await message.reply_photo(
+        photo=FORCE_SUB_IMAGE.strip(),
+        caption="**Checking subscription...**"
+    )
+    
+    await asyncio.sleep(1)
     try:
-        await wait_msg.delete()
+        await checking_msg.delete()
     except Exception:
         pass
-
+        
     await send_stored_files(client, message.chat.id, param)
 
 async def send_stored_files(client: Client, chat_id: int, param: str):
@@ -229,26 +233,28 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
     except Exception:
         pass
 
-    checking_msg = await callback.message.reply_photo(
-        photo=FORCE_SUB_IMAGE.strip(),
-        caption="**Checking subscription...**"
-    )
-
-    await asyncio.sleep(2)
-    try:
-        await checking_msg.delete()
-    except Exception:
-        pass
-
     if param:
-        wait_msg = await callback.message.reply_text("**Wait a sec...**")
+        checking_msg = await callback.message.reply_photo(
+            photo=FORCE_SUB_IMAGE.strip(),
+            caption="⏳ **Checking subscription...**\n\n**Wait a sec...**"
+        )
         await asyncio.sleep(1)
         try:
-            await wait_msg.delete()
+            await checking_msg.delete()
         except Exception:
             pass
         await send_stored_files(client, callback.message.chat.id, param)
     else:
+        checking_msg = await callback.message.reply_photo(
+            photo=FORCE_SUB_IMAGE.strip(),
+            caption="**Checking subscription...**"
+        )
+        await asyncio.sleep(2)
+        try:
+            await checking_msg.delete()
+        except Exception:
+            pass
+
         text = (
             f"**Wᴇʟᴄᴏᴍᴇ {user_name}!**\n\n"
             "**I ᴀᴍ A Fɪʟᴇ Sᴛᴏʀᴇ Bᴏᴛ.**\n\n"
@@ -264,14 +270,12 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
             reply_markup=InlineKeyboardMarkup(buttons)
         )
 
-
 @bot.on_callback_query(filters.regex("close"))
 async def close_callback(client: Client, callback: CallbackQuery):
     try:
         await callback.message.delete()
     except Exception:
         pass
-
 
 @bot.on_callback_query(filters.regex("about_menu"))
 async def about_menu_callback(client: Client, callback: CallbackQuery):
@@ -294,7 +298,6 @@ async def about_menu_callback(client: Client, callback: CallbackQuery):
         )
     except Exception:
         pass
-
 
 @bot.on_callback_query(filters.regex("about_back"))
 async def about_back_callback(client: Client, callback: CallbackQuery):
@@ -480,7 +483,6 @@ async def broadcast_cmd(client: Client, message: Message):
         f"• **Successful:** `{success}`\n"
         f"• **Failed:** `{failed}`"
     )
-
 
 async def handle_ping(request):
     return web.Response(text="Bot is running 24/7!")
