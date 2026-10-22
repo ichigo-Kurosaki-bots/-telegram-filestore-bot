@@ -25,6 +25,8 @@ elif not isinstance(ADMINS, (list, set, tuple)):
 else:
     ADMINS = [int(x) for x in ADMINS if str(x).isdigit()]
 
+FORWARD_RESTRICTION = True
+
 print(f"Initialized Admin IDs list: {ADMINS}")
 
 print("Initializing Pyrogram Client...")
@@ -147,7 +149,8 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
                 chat_id=chat_id,
                 from_chat_id=DB_CHANNEL_ID,
                 message_id=msg_id,
-                reply_markup=file_button
+                reply_markup=file_button,
+                protect_content=FORWARD_RESTRICTION
             )
             
             if msg.caption:
@@ -185,7 +188,11 @@ async def delete_files_after_delay(client, chat_id, messages, warn_msg, delay):
         except Exception:
             pass
     try:
-        await client.delete_messages(chat_id, warn_msg.id)
+        await client.edit_message_text(
+            chat_id=chat_id,
+            message_id=warn_msg.id,
+            text="**Your files have been deleted!**"
+        )
     except Exception:
         pass
         
@@ -318,6 +325,18 @@ async def about_back_callback(client: Client, callback: CallbackQuery):
         )
     except Exception:
         pass
+
+@bot.on_message(filters.command("restriction_on") & filters.user(ADMINS))
+async def restriction_on_cmd(client: Client, message: Message):
+    global FORWARD_RESTRICTION
+    FORWARD_RESTRICTION = True
+    await message.reply_text("🔒 **Forwarding & saving restriction has been ENABLED.**")
+
+@bot.on_message(filters.command("restriction_off") & filters.user(ADMINS))
+async def restriction_off_cmd(client: Client, message: Message):
+    global FORWARD_RESTRICTION
+    FORWARD_RESTRICTION = False
+    await message.reply_text("🔓 **Forwarding & saving restriction has been DISABLED.**")
 
 @bot.on_message(filters.command("genlink") & filters.user(ADMINS))
 async def genlink_handler(client: Client, message: Message):
