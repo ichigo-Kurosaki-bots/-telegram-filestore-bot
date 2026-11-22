@@ -288,11 +288,11 @@ async def close_callback(client: Client, callback: CallbackQuery):
 async def about_menu_callback(client: Client, callback: CallbackQuery):
     text = (
         "**Aʙᴏᴜᴛ Mᴇ...**\n\n"
-        "›› **Mᴀᴅᴇ Fᴏʀ : @Ongoing_Donghua_Aero**\n"
+        "›› **Mᴀᴅᴇ Fᴏʀ : @OngKDramas**\n"
         "›› **Oᴡɴᴇʀ : @Mr_Mohammed_29**\n"
         "›› **Pᴏᴡᴇʀᴇᴅ Bʏ : @Aero_Unity**\n"
         "›› **Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ : @Coders_Grp**\n\n"
-        "**Aᴅɪᴏs !!** 🥳"
+        "**Aᴅɪᴏs 🌟 !!**"
     )
     buttons = [
         [InlineKeyboardButton("• Hᴏᴍᴇ •", callback_data="about_back"),
