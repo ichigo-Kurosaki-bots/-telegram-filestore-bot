@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import time
 import os
 import datetime
 from pyrogram import Client, filters, idle
@@ -26,6 +27,9 @@ else:
     ADMINS = [int(x) for x in ADMINS if str(x).isdigit()]
 
 FORWARD_RESTRICTION = True
+
+# Record bot startup time for uptime tracking
+BOT_START_TIME = time.time()
 
 print(f"Initialized Admin IDs list: {ADMINS}")
 
@@ -63,8 +67,10 @@ async def check_fsub(client: Client, user_id: int):
 @bot.on_message(filters.command("start") & filters.private)
 async def start_handler(client: Client, message: Message):
     user_id = message.from_user.id
-    user_name = message.from_user.first_name
-    await db.add_user(user_id)
+    user_name = message.from_user.first_name or "User"
+    username = message.from_user.username
+    
+    await db.add_user(user_id, user_name, username)
     
     args = message.text.split(maxsplit=1)
     param = args[1] if len(args) > 1 else None
@@ -88,7 +94,7 @@ async def start_handler(client: Client, message: Message):
         text = (
             "**Hɪɪ..! ⚡**\n\n"
             "**Pʟᴇᴀsᴇ Jᴏɪɴ Aʟʟ Oғ Oᴜʀ Cʜᴀɴɴᴇʟs Fɪʀsᴛ Tʜᴇɴ Cʟɪᴄᴋ Oɴ Tʀʏ Aɢᴀɪɴ...❗️**\n\n"
-            "**Cʜᴀɴɴᴇʟ Sᴜʙsᴄʀɪᴘᴛɪᴏɴ Sᴛᴀᴛᴜs:**\n\n" + "\n".join(status_list)
+            "**Cʜᴀɴɴᴇʟ SᴜʙsᴄʀɪᴘᴛɪᴏN Sᴛᴀᴛᴜs:**\n\n" + "\n".join(status_list)
         )
 
         await message.reply_photo(
@@ -127,14 +133,14 @@ async def start_handler(client: Client, message: Message):
         pass
         
     await send_stored_files(client, message.chat.id, param)
-
+    
 @bot.on_message(filters.private & filters.text & ~filters.command([
-    "start", "restriction_on", "restriction_off", "genlink", "batch",
+    "start", "ping", "botuptime", "restriction_on", "restriction_off", "genlink", "batch",
     "addforcesub", "removeforcesub", "forcesublist", "stats", "broadcast"
 ]))
-async def direct_message_reply(client: Client, message: Message):
-    await message.reply_text("Don't Message Me Directly, I am Just a Kura Shitsuji.")
 
+async def direct_message_reply(client: Client, message: Message):
+    await message.reply_text("Don't Message Me Directly, I am Just a Shitsuji (Servant)**")
 
 async def send_stored_files(client: Client, chat_id: int, param: str):
     try:
@@ -181,29 +187,90 @@ async def send_stored_files(client: Client, chat_id: int, param: str):
         last_msg = sent_messages[-1]
         warn_msg = await client.send_message(
             chat_id=chat_id,
-            text=f"**⚠️ Tʜɪs Fɪʟᴇ ɪs ᴅᴇʟᴇᴛɪɴɢ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ɪɴ {AUTO_DELETE_TIME // 60} ᴍɪɴᴜᴛᴇs !**\n\n"
-                 f"**📌 Fᴏʀᴡᴀʀᴅ ɪᴛ ᴛᴏ ʏᴏᴜʀ Sᴀᴠᴇᴅ Mᴇssᴀɢᴇs..!**",
+            text=f"**Tʜɪs Fɪʟᴇ ɪs ᴅᴇʟᴇᴛɪɴɢ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ɪɴ {AUTO_DELETE_TIME // 60} ᴍɪɴᴜᴛᴇs. Fᴏʀᴡᴀʀᴅ ɪᴛ ᴛᴏ ʏᴏᴜʀ Sᴀᴠᴇᴅ Mᴇssᴀɢᴇs..!**",
             reply_to_message_id=last_msg.id
         )
         
-        asyncio.create_task(delete_files_after_delay(client, chat_id, sent_messages, warn_msg, AUTO_DELETE_TIME))
+        asyncio.create_task(delete_files_after_delay(client, chat_id, sent_messages, warn_msg, AUTO_DELETE_TIME, param))
 
-async def delete_files_after_delay(client, chat_id, messages, warn_msg, delay):
+async def delete_files_after_delay(client, chat_id, messages, warn_msg, delay, param):
     await asyncio.sleep(delay)
     for msg in messages:
         try:
             await client.delete_messages(chat_id, msg.id)
         except Exception:
             pass
+            
+    # Include the param in the callback data so we can re-deliver this exact file!
+    warning_buttons = InlineKeyboardMarkup([
+        [InlineKeyboardButton("• Gᴇᴛ Yᴏᴜʀ Fɪʟᴇ Aɢᴀɪɴ •", callback_data=f"get_file_{param}")]
+    ])
+    
     try:
         await client.edit_message_text(
             chat_id=chat_id,
             message_id=warn_msg.id,
-            text="**Your files have been deleted!**"
+            text="**Your File Is Successfully Deleted** ✅",
+            reply_markup=warning_buttons
         )
     except Exception:
         pass
+
+@bot.on_callback_query(filters.regex(r"^get_file_"))
+async def get_file_again_warn_callback(client: Client, callback: CallbackQuery):
+    user_id = callback.from_user.id
+    # Extract the file parameter from callback data
+    param = callback.data.split("get_file_")[1]
+
+    unjoined, status_list = await check_fsub(client, user_id)
+
+    if unjoined:
+        buttons = []
+        temp_row = []
+        for ch in unjoined:
+            temp_row.append(InlineKeyboardButton(ch["channel_title"], url=ch["invite_link"]))
+            if len(temp_row) == 2:
+                buttons.append(temp_row)
+                temp_row = []
+        if temp_row:
+            buttons.append(temp_row)
         
+        # Point the Try Again button back to this specific file param
+        buttons.append([InlineKeyboardButton("• Tʀʏ Aɢᴀɪɴ •", callback_data=f"try_again_{param}")])
+
+        text = (
+            "**Hɪɪ..! ⚡**\n\n"
+            "**Pʟᴇᴀsᴇ Jᴏɪɴ Aʟʟ Oғ Oᴜʀ Cʜᴀɴɴᴇʟs Fɪʀsᴛ Tʜᴇɴ Cʟɪᴄᴋ Oɴ Tʀʏ Aɢᴀɪɴ...❗️**\n\n"
+            "**Cʜᴀɴɴᴇʟ SᴜʙsᴄʀɪᴘᴛɪᴏN Sᴛᴀᴛᴜs:**\n\n" + "\n".join(status_list)
+        )
+
+        await callback.message.reply_photo(
+            photo=FORCE_SUB_IMAGE.strip(),
+            caption=text,
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+        await callback.answer("Please join all channels first!", show_alert=True)
+        return
+
+    # If joined, clean up the warning message and re-deliver the file immediately!
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
+
+    checking_msg = await callback.message.reply_photo(
+        photo=FORCE_SUB_IMAGE.strip(),
+        caption="⏳ **Checking subscription...**\n\n**Wait a sec...**"
+    )
+    await asyncio.sleep(1)
+    try:
+        await checking_msg.delete()
+    except Exception:
+        pass
+
+    await send_stored_files(client, callback.message.chat.id, param)
+    await callback.answer("✅ Here is your file!", show_alert=True)
+
 @bot.on_callback_query(filters.regex(r"^try_again_"))
 async def try_again_callback(client: Client, callback: CallbackQuery):
     user_id = callback.from_user.id
@@ -231,7 +298,7 @@ async def try_again_callback(client: Client, callback: CallbackQuery):
         text = (
             "**Hɪɪ..! ⚡**\n\n"
             " **Pʟᴇᴀsᴇ Jᴏɪɴ Aʟʟ Oғ Oᴜʀ Cʜᴀɴɴᴇʟs Fɪʀsᴛ Tʜᴇɴ Cʟɪᴄᴋ Oɴ Tʀʏ Aɢᴀɪɴ...❗️**\n\n"
-            "**Cʜᴀɴɴᴇʟ Sᴜʙsᴄʀɪᴘᴛɪᴏɴ Sᴛᴀᴛᴜs:**\n\n" + "\n".join(status_list)
+            "**Cʜᴀɴɴᴇʟ SᴜʙsᴄʀɪᴘᴛɪᴏN Sᴛᴀᴛᴜs:**\n\n" + "\n".join(status_list)
         )
         
         try:
@@ -296,11 +363,11 @@ async def close_callback(client: Client, callback: CallbackQuery):
 async def about_menu_callback(client: Client, callback: CallbackQuery):
     text = (
         "**Aʙᴏᴜᴛ Mᴇ...**\n\n"
-        "›› **Mᴀᴅᴇ Fᴏʀ : @OngKDramas**\n"
+        "›› **Mᴀᴅᴇ Fᴏʀ : @Ongoing_Donghua_Aero**\n"
         "›› **Oᴡɴᴇʀ : @Mr_Mohammed_29**\n"
         "›› **Pᴏᴡᴇʀᴇᴅ Bʏ : @Aero_Unity**\n"
         "›› **Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ : @Coders_Grp**\n\n"
-        "**Aᴅɪᴏs 🌟 !!**"
+        "**Aᴅɪᴏs !!**"
     )
     buttons = [
         [InlineKeyboardButton("• Hᴏᴍᴇ •", callback_data="about_back"),
@@ -380,7 +447,6 @@ async def batch_handler(client: Client, message: Message):
         return
 
     def extract_id(arg: str) -> str:
-        # If user passed a full Telegram URL, extract the last part (message ID)
         if "t.me/" in arg:
             return arg.strip("/").split("/")[-1]
         return arg
@@ -443,28 +509,167 @@ async def list_fsub_cmd(client: Client, message: Message):
 
     await message.reply_text(text, disable_web_page_preview=True)
 
+USERS_PER_PAGE = 5 
+
 @bot.on_message(filters.command("stats") & filters.user(ADMINS))
 async def stats_cmd(client: Client, message: Message):
-    users = await db.get_all_users()
-    total_users = len(users)
+    loading_msg = await message.reply_text("**Extracting stats...**")
+    await send_stats_page(client, loading_msg, page=0, edit=True)
 
-    stats_text = f"📊 **Bᴏᴛ Sᴛᴀᴛɪsᴛɪᴄs**\n\n👤 **Tᴏᴛᴀʟ Uꜱᴇʀꜱ:** `{total_users}`\n\n"
+async def send_stats_page(client: Client, message_obj, page: int = 0, edit: bool = False):
+    users_data = await db.get_all_users_data()
+    total_users = len(users_data)
+    
+    if total_users == 0:
+        text = "📊 **Bᴏᴛ Sᴛᴀᴛɪsᴛɪᴄs**\n\n👤 **Tᴏᴛᴀʟ Uꜱᴇʀꜱ:** `0`"
+        buttons = [[InlineKeyboardButton("• Cʟᴏsᴇ •", callback_data="close")]]
+        if edit:
+            await message_obj.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+        else:
+            await message_obj.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+        return
 
-    for uid in users:
+    # Pagination math
+    total_pages = (total_users + USERS_PER_PAGE - 1) // USERS_PER_PAGE
+    page = max(0, min(page, total_pages - 1))
+    
+    start_idx = page * USERS_PER_PAGE
+    end_idx = start_idx + USERS_PER_PAGE
+    current_page_users = users_data[start_idx:end_idx]
+
+    stats_text = f"📊 **Bᴏᴛ Sᴛᴀᴛɪsᴛɪᴄs**\n\n👤 **Tᴏᴛᴀʟ Uꜱᴇʀꜱ:** `{total_users}`\n📄 **Pᴀɢᴇ:** `{page + 1}/{total_pages}`\n\n"
+
+    for idx, user_doc in enumerate(current_page_users, start_idx + 1):
+        uid = user_doc.get("user_id") or user_doc.get("id") or user_doc.get("_id")
+        if not uid:
+            continue
+
+        u_name = user_doc.get("first_name") or "User"
+        saved_username = user_doc.get("username")
+        
+        username_str = f"@{saved_username}" if saved_username else "None"
+
+        joined_date = user_doc.get("date", "N/A")
+        joined_time = user_doc.get("time", "N/A")
+        day_name = user_doc.get("day", "N/A")
+
+        stats_text += (
+            f"**{idx}.** [{u_name}](tg://user?id={uid})\n"
+            f" • **Nᴀᴍᴇ:** `{u_name}`\n"
+            f" • **Usᴇʀɴᴀᴍᴇ:** `{username_str}`\n"
+            f" • **Iᴅ:** `{uid}`\n"
+            f" • **Bᴏᴛ Sᴛᴀʀᴛᴇᴅ:** `{day_name}, {joined_date} | {joined_time}`\n\n"
+        )
+
+    # Pagination buttons
+    nav_buttons = []
+    if total_pages > 1:
+        if page > 0:
+            nav_buttons.append(InlineKeyboardButton("• Bᴀᴄᴋ •", callback_data=f"stats_page_{page - 1}"))
+        nav_buttons.append(InlineKeyboardButton(f"🗓️ {page + 1}/{total_pages}", callback_data="stats_noop"))
+        if page < total_pages - 1:
+            nav_buttons.append(InlineKeyboardButton("• Nᴇxᴛ •", callback_data=f"stats_page_{page + 1}"))
+
+    buttons = []
+    if nav_buttons:
+        buttons.append(nav_buttons)
+    buttons.append([InlineKeyboardButton("• Cʟᴏsᴇ •", callback_data="close")])
+
+    markup = InlineKeyboardMarkup(buttons)
+    
+    try:
+        if edit:
+            await message_obj.edit_text(stats_text, reply_markup=markup, disable_web_page_preview=True)
+        else:
+            await message_obj.reply_text(stats_text, reply_markup=markup, disable_web_page_preview=True)
+    except Exception:
+        pass
+
+@bot.on_callback_query(filters.regex(r"^stats_page_"))
+async def stats_pagination_callback(client: Client, callback: CallbackQuery):
+    page = int(callback.data.split("stats_page_")[1])
+    await callback.answer()
+    await send_stats_page(client, callback.message, page=page, edit=True)
+
+@bot.on_callback_query(filters.regex("stats_noop"))
+async def stats_noop_callback(client: Client, callback: CallbackQuery):
+    await callback.answer("📍 Current page indicator", show_alert=False)
+
+@bot.on_message(filters.command("ping") & filters.private)
+async def ping_handler(client: Client, message: Message):
+    user_id = message.from_user.id
+
+    unjoined, status_list = await check_fsub(client, user_id)
+    if unjoined:
+        return
+        
+    start_time = time.time()
+    sent_msg = await message.reply_text("Pinging...")
+    end_time = time.time()
+    ping_time = round((end_time - start_time) * 1000, 2)
+    await sent_msg.edit_text(f"🏓 **Pong!** `{ping_time}ms`")
+
+@bot.on_message(filters.command("botuptime") & filters.private)
+async def botuptime_handler(client: Client, message: Message):
+    user_id = message.from_user.id
+    unjoined, status_list = await check_fsub(client, user_id)
+    if unjoined:
+        return
+
+    # Calculate Ping
+    start_time = time.time()
+    temp_ping_msg = await message.reply_text("Calculating uptime...")
+    ping_time = round((time.time() - start_time) * 1000, 2)
+    await temp_ping_msg.delete()
+
+    # Calculate Uptime from BOT_START_TIME
+    uptime_seconds = int(time.time() - BOT_START_TIME)
+    
+    days = uptime_seconds // 86400
+    hours = (uptime_seconds % 86400) // 3600
+    minutes = (uptime_seconds % 3600) // 60
+    seconds = uptime_seconds % 60
+
+    if days > 0:
+        uptime_str = f"{days}d {hours}h {minutes}m {seconds}s"
+    elif hours > 0:
+        uptime_str = f"{hours}h {minutes}m {seconds}s"
+    elif minutes > 0:
+        uptime_str = f"{minutes}m {seconds}s"
+    else:
+        uptime_str = f"{seconds}s"
+
+    # Current date metrics
+    now = datetime.datetime.now()
+    current_day = now.strftime("%A")
+    current_month = now.strftime("%B")
+    current_year = now.strftime("%Y")
+    bot_version = "v1.0.0"
+
+    uptime_text = (
+        f"🤖 **Bᴏᴛ U𝚙ᴛɪᴍᴇ & Sᴛᴀᴛᴜs**\n\n"
+        f"• **U𝚙ᴛɪᴍᴇ:** `{uptime_str}`\n"
+        f"• **Dᴀʏ:** `{current_day}`\n"
+        f"• **Mᴏɴᴛʜ:** `{current_month}`\n"
+        f"• **Yᴇᴀʀ:** `{current_year}`\n"
+        f"• **Vᴇʀsɪᴏɴ:** `{bot_version}`\n"
+        f"• **Pɪɴɢ:** `{ping_time}ms`"
+    )
+
+    buttons = InlineKeyboardMarkup([[InlineKeyboardButton("• Cʟᴏsᴇ •", callback_data="close")]])
+    
+    sent_uptime = await message.reply_text(uptime_text, reply_markup=buttons)
+
+    # Auto delete after 30 seconds
+    async def delete_uptime():
+        await asyncio.sleep(30)
         try:
-            user_obj = await client.get_users(uid)
-            u_name = user_obj.first_name or "Unknown"
+            await sent_uptime.delete()
         except Exception:
-            u_name = "User"
+            pass
 
-        now = datetime.datetime.now()
-        joined_date = now.strftime("%Y-%m-%d")
-        day_name = now.strftime("%A")
+    asyncio.create_task(delete_uptime())
 
-        stats_text += f"• **[{u_name}](tg://user?id={uid})** `[{uid}]` `[{joined_date}]` `[{day_name}]`\n"
-
-    buttons = [[InlineKeyboardButton("• Cʟᴏsᴇ •", callback_data="close")]]
-    await message.reply_text(stats_text, reply_markup=InlineKeyboardMarkup(buttons), disable_web_page_preview=True)
 
 @bot.on_message(filters.command("broadcast") & filters.user(ADMINS))
 async def broadcast_cmd(client: Client, message: Message):
@@ -485,7 +690,6 @@ async def broadcast_cmd(client: Client, message: Message):
 
     for user_id in users:
         try:
-            # Forwarding the message preserves text, media, formatting, AND inline buttons entirely without errors
             sent_msg = await reply.forward(chat_id=user_id)
             
             if should_pin:
@@ -504,7 +708,6 @@ async def broadcast_cmd(client: Client, message: Message):
             print(f"Broadcast error for user {user_id}: {e}")
             failed += 1
 
-    # Send completion summary in bold
     await message.reply_text(
         f"✅ **Broadcast Completed!**\n\n"
         f"• **Successful:** `{success}`\n"
@@ -528,12 +731,13 @@ if __name__ == "__main__":
     loop.run_until_complete(start_web_server())
     print("Web Server started successfully.")
 
-    print("Testing MongoDB connection...")
+    print("Testing MongoDB connection & running migrations...")
     try:
+        loop.run_until_complete(db.fix_old_users()) # <--- Runs migration safely here
         loop.run_until_complete(db.get_fsub_channels())
-        print("MongoDB connection verified successfully!")
+        print("MongoDB connection & migration verified successfully!")
     except Exception as e:
-        print(f"CRITICAL: MongoDB connection failed: {e}")
+        print(f"CRITICAL: MongoDB setup failed: {e}")
 
     with bot:
         me = bot.get_me()
@@ -541,3 +745,4 @@ if __name__ == "__main__":
         print(f"Authorized Admin IDs: {ADMINS}")
         print("Bot is up and running successfully!")
         idle()
+
