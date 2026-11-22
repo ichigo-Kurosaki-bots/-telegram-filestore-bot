@@ -128,6 +128,14 @@ async def start_handler(client: Client, message: Message):
         
     await send_stored_files(client, message.chat.id, param)
 
+@bot.on_message(filters.private & filters.text & ~filters.command([
+    "start", "restriction_on", "restriction_off", "genlink", "batch",
+    "addforcesub", "removeforcesub", "forcesublist", "stats", "broadcast"
+]))
+async def direct_message_reply(client: Client, message: Message):
+    await message.reply_text("Don't Message Me Directly, I am Just a Kura Shitsuji.")
+
+
 async def send_stored_files(client: Client, chat_id: int, param: str):
     try:
         data = decode_data(param)
